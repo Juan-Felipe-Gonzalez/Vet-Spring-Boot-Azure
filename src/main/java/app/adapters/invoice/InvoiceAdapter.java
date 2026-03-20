@@ -2,6 +2,7 @@ package app.adapters.invoice;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import app.adapters.invoice.entity.InvoiceEntity;
 import app.adapters.invoice.repository.InvoiceRepository;
 import app.adapters.medicalRecord.entity.MedicalRecordEntity;
@@ -65,7 +66,7 @@ public class InvoiceAdapter implements InvoicePort {
       meReEn.setDiagnosis(invoice.getOrderId().getMedicine().getDiagnosis());
       meReEn.setDoseMedication(invoice.getOrderId().getMedicine().getDoseMedication());
       meReEn.setMedicine(invoice.getOrderId().getMedicine().getMedicine());
-      meReEn.setOrderCancellation(invoice.getOrderId().getMedicine().isOrderCancellation());
+      meReEn.setOrderCancellation(invoice.getOrderId().getMedicine().getOrderCancellation());
       meReEn.setPetId(petEntity);
       meReEn.setProcedureDetail(invoice.getOrderId().getMedicine().getProcedureDetail());
       meReEn.setProcedures(invoice.getOrderId().getMedicine().getProcedures());
@@ -129,7 +130,7 @@ public class InvoiceAdapter implements InvoicePort {
     meReEn.setDiagnosis(invoice.getOrderId().getMedicine().getDiagnosis());
     meReEn.setDoseMedication(invoice.getOrderId().getMedicine().getDoseMedication());
     meReEn.setMedicine(invoice.getOrderId().getMedicine().getMedicine());
-    meReEn.setOrderCancellation(invoice.getOrderId().getMedicine().isOrderCancellation());
+    meReEn.setOrderCancellation(invoice.getOrderId().getMedicine().getOrderCancellation());
     meReEn.setPetId(petEntity);
     meReEn.setProcedureDetail(invoice.getOrderId().getMedicine().getProcedureDetail());
     meReEn.setProcedures(invoice.getOrderId().getMedicine().getProcedures());
