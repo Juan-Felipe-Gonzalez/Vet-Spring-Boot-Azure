@@ -1,32 +1,34 @@
 package app.adapters.rest;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
-
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import app.Exceptions.BusinessException;
 import app.Exceptions.NotFoundException;
+import app.adapters.pet.entity.PetEntity;
 import app.adapters.rest.request.MedicalRecordRequest;
+import app.adapters.rest.request.OrderRequest;
 import app.adapters.rest.request.PetOwnerRequest;
 import app.adapters.rest.request.PetRequest;
-import app.adapters.rest.request.OrderRequest;
-import app.domain.models.MedicalRecord;
-import app.domain.models.Person;    
-import app.domain.models.Pet;
 import app.domain.models.Login;
+import app.domain.models.MedicalRecord;
 import app.domain.models.Order;
+import app.domain.models.Person;
+import app.domain.models.Pet;
+import app.domain.services.LoginService;
 import app.domain.services.OrderService;
 import app.domain.services.VeterinaryService;
-import app.domain.services.LoginService;
 
 @RestController
 @RequestMapping("/api")
@@ -44,7 +46,7 @@ public class VetController {
         try {
             // ToDo: should be with jwt token
             verifyVeterinary(request.getUserNameVet(), request.getPasswordVet());
-            
+
             veterinaryService.savePetOwner(request.getDocument(), request.getName(), request.getAge());
             return new ResponseEntity<>("Person created successfully", HttpStatus.CREATED);
         } catch (BusinessException e) {
@@ -57,9 +59,6 @@ public class VetController {
     @PostMapping("/pet")
     public ResponseEntity<String> createPet(@RequestBody PetRequest request) {
         try {
-            // ToDo: should be with jwt token
-            verifyVeterinary(request.getUserNameVet(), request.getPasswordVet());
-
             veterinaryService.savePet(request.getDocumentOwner(), request.getName(), request.getAge(), request.getSpecie(), request.getBreed(), request.getDescription(), request.getWeight());
             return new ResponseEntity<>("Pet created successfully", HttpStatus.CREATED);
         } catch (BusinessException e) {
@@ -70,7 +69,20 @@ public class VetController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
+    @GetMapping("/pet")
+    public ResponseEntity<List<PetEntity>> getPet() {
+        try {
+            List<PetEntity> pets = veterinaryService.getAllPet();
+            if (pets == null || pets.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+            return ResponseEntity.ok(pets);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/medicalRecord/{ms}")
     public ResponseEntity<MedicalRecord> getMedicalRecord(@PathVariable Long ms) {
         try {
@@ -90,7 +102,7 @@ public class VetController {
             // ToDo: should be with jwt token
             verifyVeterinary(request.getUserNameVet(), request.getPasswordVet());
 
-            Pet pet = veterinaryService.searchPet(request.getPetId());  
+            Pet pet = veterinaryService.searchPet(request.getPetId());
 
             // TODO: should be with cookie's token
             Person veterinary = veterinaryService.existsPerson(request.getVetDocument(), "Veterinary not found");
@@ -100,13 +112,13 @@ public class VetController {
             orderService.saveOrder(null, pet, meRe.getPetId().getDocumentOwner(), veterinary, meRe, null);
 
             return new ResponseEntity<>("Medical record created successfully and order saved", HttpStatus.CREATED);
-        }catch (Exception e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } 
+        }
     }
 
     @PutMapping("/updateMedicalRecord")
-	public ResponseEntity<String> updateMedicalRecord(@RequestBody MedicalRecordRequest request) {
+    public ResponseEntity<String> updateMedicalRecord(@RequestBody MedicalRecordRequest request) {
         try {
             // ToDo: should be with jwt token
             verifyVeterinary(request.getUserNameVet(), request.getPasswordVet());
@@ -117,23 +129,23 @@ public class VetController {
 
             // If there is a new veterinary, we check if it exists
             Person veterinary = null;
-            if(request.getVetDocument() != null) {
+            if (request.getVetDocument() != null) {
                 veterinary = veterinaryService.existsPerson(request.getVetDocument(), "Veterinary not found");
-                if(!veterinary.getRole().equals("VETERINARIO")) {
+                if (!veterinary.getRole().equals("VETERINARIO")) {
                     throw new BusinessException("Veterinary not found");
                 }
             }
 
             // If there is a new pet, we check if it exists
             Pet pet = null;
-            if(request.getPetId() != null) {
-                pet = veterinaryService.searchPet(request.getPetId());  
+            if (request.getPetId() != null) {
+                pet = veterinaryService.searchPet(request.getPetId());
             }
 
             // We create a new medical record
-			MedicalRecord medicalRecord = new MedicalRecord();
+            MedicalRecord medicalRecord = new MedicalRecord();
             medicalRecord.setDate(request.getMs());
-			medicalRecord.setVeterinary(request.getVetDocument()  == null ? oldMedicalRecord.getVetDocument() : veterinary);
+            medicalRecord.setVeterinary(request.getVetDocument() == null ? oldMedicalRecord.getVetDocument() : veterinary);
             medicalRecord.setPet(request.getPetId() == null ? oldMedicalRecord.getPetId() : pet);
             medicalRecord.setReason(request.getReason() == null ? oldMedicalRecord.getReason() : request.getReason());
             medicalRecord.setSymptoms(request.getSymptoms() == null ? oldMedicalRecord.getSymptoms() : request.getSymptoms());
@@ -144,25 +156,25 @@ public class VetController {
             medicalRecord.setVaccinationHistory(request.getVaccinationHistory() == null ? oldMedicalRecord.getVaccinationHistory() : request.getVaccinationHistory());
             medicalRecord.setAllergyMedications(request.getAllergyMedications() == null ? oldMedicalRecord.getAllergyMedications() : request.getAllergyMedications());
             medicalRecord.setProcedureDetail(request.getProcedureDetail() == null ? oldMedicalRecord.getProcedureDetail() : request.getProcedureDetail());
-            
-            if(request.getOrderCancellation() != null) {
+
+            if (request.getOrderCancellation() != null) {
                 medicalRecord.setOrderCancellation(request.getOrderCancellation());
             } else {
                 medicalRecord.setOrderCancellation(oldMedicalRecord.getOrderCancellation());
             }
 
-            veterinaryService.updateMedicalRecord(medicalRecord);   
+            veterinaryService.updateMedicalRecord(medicalRecord);
 
-			return new ResponseEntity("Medical record updated successfully", HttpStatus.ACCEPTED);
+            return new ResponseEntity("Medical record updated successfully", HttpStatus.ACCEPTED);
         } catch (BusinessException be) {
-        return new ResponseEntity(be.getMessage(), HttpStatus.CONFLICT);
-		} catch (NotFoundException e) {
-			return new ResponseEntity(e.getMessage(), HttpStatus.NOT_FOUND);
-		} catch (Exception e) {
-			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
-    
+            return new ResponseEntity(be.getMessage(), HttpStatus.CONFLICT);
+        } catch (NotFoundException e) {
+            return new ResponseEntity(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/order/{orderId}")
     public ResponseEntity<Order> getOrder(@PathVariable Long orderId) {
         try {
@@ -186,9 +198,9 @@ public class VetController {
             Person owner = veterinaryService.existsPerson(request.getDocumentOwner(), "Owner not found");
             Person vet = veterinaryService.existsPerson(request.getDocumentVet(), "Veterinary not found");
             MedicalRecord meRe = veterinaryService.searchMedicalRecord(request.getMedicine());
-            
+
             orderService.saveOrder(request.getOrderId(), pet, owner, vet, meRe, null);
-           
+
             return new ResponseEntity<>("Order created successfully", HttpStatus.CREATED);
         } catch (BusinessException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -208,23 +220,23 @@ public class VetController {
 
             MedicalRecord medicalRecord = veterinaryService.searchMedicalRecord(request.getMedicine());
             veterinaryService.changeOrderCancellation(medicalRecord);
-            
+
             return new ResponseEntity<>("Order cancelled successfully", HttpStatus.OK);
         } catch (NotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } 
-        catch (Exception e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        } 
+        }
     }
 
     private void verifyVeterinary(String userNameVet, String passwordVet) throws BusinessException {
         try {
-            if(userNameVet != null && passwordVet != null) {
+            if (userNameVet != null && passwordVet != null) {
                 Login login = loginService.login(userNameVet, passwordVet);
 
-                if(!login.getPersonId().getRole().equals("VETERINARIO"))
+                if (!login.getPersonId().getRole().equals("VETERINARIO")) {
                     throw new BusinessException("Veterinary not logged in");
+                }
             } else {
                 throw new BusinessException("Veterinary not logged in");
             }

@@ -1,23 +1,21 @@
 package app.adapters.rest;
 
 import java.util.List;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import app.Exceptions.BusinessException;
+import app.Exceptions.NotFoundException;
+import app.adapters.rest.request.LoginRequest;
 import app.domain.models.Login;
 import app.domain.services.AdministrationService;
-import app.Exceptions.NotFoundException;
-import app.Exceptions.BusinessException;
-import app.adapters.rest.request.LoginRequest;
 import app.domain.services.LoginService;
 
 @RestController
@@ -29,20 +27,21 @@ public class LoginController {
 	@Autowired
 	private LoginService loginService;
 
-    @GetMapping("/users")
-    public ResponseEntity<List<Login>> login() {
+	@GetMapping("/users")
+	public ResponseEntity<List<Login>> getUsers() {
 		try {
+			
 			List<Login> users = administrationService.getUsers();
+			return ResponseEntity.ok(users);
 
-			return new ResponseEntity<>(users, HttpStatus.OK);
-		}catch (NotFoundException NFe) {
-			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-		}  catch (BusinessException be) {
-			return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+		} catch (NotFoundException NFe) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		} catch (BusinessException be) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		} catch (Exception e) {
-			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
-    }
+	}
 
 	@PostMapping("/login")
 	public ResponseEntity<String> login(@RequestBody LoginRequest request) {
@@ -59,4 +58,3 @@ public class LoginController {
 		}
 	}
 }
-

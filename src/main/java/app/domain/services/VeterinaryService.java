@@ -1,5 +1,7 @@
 package app.domain.services;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -8,17 +10,17 @@ import app.Exceptions.NotFoundException;
 import app.adapters.medicalRecord.MedicalRecordAdapter;
 import app.adapters.person.PersonAdapter;
 import app.adapters.pet.PetAdapter;
+import app.adapters.pet.entity.PetEntity;
+import app.adapters.pet.repository.PetRepository;
 import app.domain.models.Login;
 import app.domain.models.MedicalRecord;
 import app.domain.models.Person;
 import app.domain.models.Pet;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Setter
 @Getter
-@NoArgsConstructor
 @Service
 public class VeterinaryService {
 
@@ -28,7 +30,12 @@ public class VeterinaryService {
   private MedicalRecordAdapter meReAdapter;
   @Autowired
   private PetAdapter petAdapter;
+
+  private final PetRepository petRepository;
   
+  public VeterinaryService(PetRepository petRepository) {
+    this.petRepository = petRepository;
+  }
 
   //#region CREATE
   public void savePetOwner(long document, String name, int age) throws Exception {
@@ -110,6 +117,15 @@ public class VeterinaryService {
     Pet pet = petAdapter.findByPetId(petId);
     if(pet == null) throw new NotFoundException("There is no pet registered with that id");
     return pet;
+  }
+
+  public List<PetEntity> getAllPet() {
+    List<PetEntity> listPets = petRepository.findAll();
+    if(!listPets.isEmpty()) {
+      listPets.get(0).getDocumentOwner();
+    }
+
+    return listPets;
   }
 
   public MedicalRecord searchMedicalRecord(long miliseconds) throws NotFoundException {
